@@ -14,7 +14,7 @@
       "destination": "/api"
     },
     {
-      "source": "/((?!api|shared|media).*).*",
+      "source": "/((?!api|shared|media).*)",
       "destination": "/index.html"
     }
   ]
