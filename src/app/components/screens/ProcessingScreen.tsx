@@ -29,17 +29,20 @@ export function ProcessingScreen() {
         stripUrl = await composePhotoStrip(photos, frame);
         if (!cancelled) setFinalFrameUrl(stripUrl);
 
+        const savePromise = saveAllPhotos(photos, stripUrl, sessionId, state.recordedVideoBlob, state.recordedGifBlob);
+        const delayPromise = new Promise(resolve => setTimeout(resolve, PROCESSING_DURATION_MS));
+
         try {
-          const res = await saveAllPhotos(photos, stripUrl, sessionId, state.recordedVideoBlob, state.recordedGifBlob);
+          const [res] = await Promise.all([savePromise, delayPromise]);
           if (!cancelled && res.shareUrl) {
             setShareUrl(res.shareUrl);
           }
         } catch (err) {
           console.error('Failed to save photos to disk:', err);
         }
+      } else {
+        await new Promise(resolve => setTimeout(resolve, PROCESSING_DURATION_MS));
       }
-
-      await new Promise(resolve => setTimeout(resolve, PROCESSING_DURATION_MS));
 
       if (!cancelled) goToStep(9);
     };

@@ -29,6 +29,17 @@ function dataUrlToBuffer(dataUrl) {
 }
 
 function readJsonBody(req) {
+  if (req.body !== undefined) {
+    if (typeof req.body === 'string') {
+      try {
+        return Promise.resolve(req.body ? JSON.parse(req.body) : {});
+      } catch {
+        return Promise.reject(new Error('Invalid JSON body'));
+      }
+    }
+    return Promise.resolve(req.body || {});
+  }
+
   return new Promise((resolve, reject) => {
     let body = '';
     req.on('data', chunk => { body += chunk; });
@@ -625,7 +636,6 @@ const requestListener = async (req, res) => {
   } catch (err) {
     console.error('Server error:', err);
     sendJson(res, 500, { error: err.message ?? 'Internal server error' });
-  }
   }
 };
 
