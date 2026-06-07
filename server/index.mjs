@@ -7,10 +7,13 @@ import os from 'os';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, '..');
-const ORIGINAL_DIR = path.join(PROJECT_ROOT, 'Picture', 'Original');
-const STRIP_DIR = path.join(PROJECT_ROOT, 'Picture', 'Strip');
-const VIDEO_DIR = path.join(PROJECT_ROOT, 'Picture', 'Video');
-const GIF_DIR = path.join(PROJECT_ROOT, 'Picture', 'GIF');
+const IS_VERCEL = !!process.env.VERCEL;
+const STORAGE_ROOT = IS_VERCEL ? '/tmp' : PROJECT_ROOT;
+
+const ORIGINAL_DIR = path.join(STORAGE_ROOT, 'Picture', 'Original');
+const STRIP_DIR = path.join(STORAGE_ROOT, 'Picture', 'Strip');
+const VIDEO_DIR = path.join(STORAGE_ROOT, 'Picture', 'Video');
+const GIF_DIR = path.join(STORAGE_ROOT, 'Picture', 'GIF');
 const PORT = 3847;
 
 function ensureDirs() {
@@ -491,7 +494,7 @@ function getSharedPageHtml(sessionId) {
 
 ensureDirs();
 
-const server = http.createServer(async (req, res) => {
+const requestListener = async (req, res) => {
   if (req.method === 'OPTIONS') {
     sendJson(res, 204, {});
     return;
@@ -522,8 +525,8 @@ const server = http.createServer(async (req, res) => {
     // Static media serving
     if (req.method === 'GET' && req.url.startsWith('/media/')) {
       const relativePath = req.url.slice(7); // Remove '/media/'
-      const filePath = path.join(PROJECT_ROOT, 'Picture', relativePath);
-      const pictureDir = path.join(PROJECT_ROOT, 'Picture');
+      const filePath = path.join(STORAGE_ROOT, 'Picture', relativePath);
+      const pictureDir = path.join(STORAGE_ROOT, 'Picture');
 
       // Prevent directory traversal
       if (!filePath.startsWith(pictureDir)) {
@@ -578,7 +581,12 @@ const server = http.createServer(async (req, res) => {
       }
 
       const saved = await saveStripPhoto(image, sessionId);
-      const shareUrl = `http://${getLocalIpAddress()}:${PORT}/shared/${sessionId}`;
+      let host = req.headers.host || `localhost:${PORT}`;
+      if (!IS_VERCEL && (host.startsWith('localhost') || host.startsWith('127.0.0.1'))) {
+        host = `${getLocalIpAddress()}:${PORT}`;
+      }
+      const protocol = IS_VERCEL ? 'https' : 'http';
+      const shareUrl = `${protocol}://${host}/shared/${sessionId}`;
       sendJson(res, 200, { ok: true, saved, shareUrl });
       return;
     }
@@ -618,12 +626,19 @@ const server = http.createServer(async (req, res) => {
     console.error('Server error:', err);
     sendJson(res, 500, { error: err.message ?? 'Internal server error' });
   }
-});
+  }
+};
 
-server.listen(PORT, () => {
-  console.log(`Photo save server running on http://localhost:${PORT}`);
-  console.log(`Original photos -> ${ORIGINAL_DIR}`);
-  console.log(`Strip photos   -> ${STRIP_DIR}`);
-  console.log(`Videos         -> ${VIDEO_DIR}`);
-  console.log(`GIFs           -> ${GIF_DIR}`);
-});
+const server = http.createServer(requestListener);
+
+if (!IS_VERCEL) {
+  server.listen(PORT, () => {
+    console.log(`Photo save server running on http://localhost:${PORT}`);
+    console.log(`Original photos -> ${ORIGINAL_DIR}`);
+    console.log(`Strip photos   -> ${STRIP_DIR}`);
+    console.log(`Videos         -> ${VIDEO_DIR}`);
+    console.log(`GIFs           -> ${GIF_DIR}`);
+  });
+}
+
+export default requestListener;

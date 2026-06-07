@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/shared/(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/media/(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/((?!api|shared|media).*).*",
+      "destination": "/index.html"
+    }
+  ]
+}
