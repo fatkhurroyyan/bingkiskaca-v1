@@ -1,0 +1,40 @@
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  overflow: hidden;
+}
+
+.kiosk-root {
+  user-select: none;
+  cursor: default;
+}
+
+.kiosk-root input,
+.kiosk-root textarea {
+  cursor: text;
+  user-select: text;
+}
+
+.kiosk-root button,
+.kiosk-root [role="button"] {
+  cursor: pointer;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+}
